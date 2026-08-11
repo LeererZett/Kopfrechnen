@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Kopfrechnen Arbeitsblatt</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    
+    <style>
+        body { font-family: sans-serif; margin: 15px; background: #fafafa; }
+        .controls { background: #f0f0f0; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; }
+        button, select { font-size: 16px; padding: 5px 10px; margin-right: 10px; }
+        .page { background: white; padding: 10mm; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; width: 297mm; height: 210mm; }
+        .header { display: flex; justify-content: space-between; font-size: 13pt; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
+        .header-title { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 11px; column-gap: 25px; font-size: 14pt; }
+        .task { display: flex; align-items: center; }
+        .dots { flex-grow: 1; border-bottom: 2px dotted #000; margin-left: 10px; height: 1em; }
+        .footer { margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; }
+        .errors-grid { display: grid; grid-template-columns: repeat(4, 1fr); column-gap: 25px; font-weight: bold; font-size: 12pt; }
+        .total-score { text-align: right; font-size: 14pt; font-weight: bold; margin-top: 10px; }
+        @media print {
+            .controls { display: none; }
+            body { margin: 0; background: white; }
+            .page { box-shadow: none; margin: 0; padding: 10mm; page-break-after: always; }
+            .page:last-child { page-break-after: auto; }
+            @page { size: A4 landscape; margin: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="controls">
+        <select id="level">
+            <option value="6">Klasse 6</option>
+            <option value="9">Klasse 9</option>
+        </select>
+        <button onclick="generateTasks()">Neu generieren</button>
+        <button onclick="window.print()">Als PDF drucken</button>
+    </div>
+
+    <div id="pages-container"></div>
+
+    <script>
+        /*
+        ====================================================================
+        REFERENZ DER AUFGABENVERTEILUNG (Für spätere Anpassungen)
+        ====================================================================
+        
+        KLASSE 6 (Insgesamt 60 Aufgaben):
+        - 2x Quadratzahlen (1 bis 20)
+        - 17x Kleines 1x1 Multiplikation (Fokus auf Faktoren 3 bis 9)
+        - 6x Zehner-Einmaleins Multiplikation (Faktoren 3-9 mit 20-90)
+        - 10x Kleines 1x1 Division (Fokus auf Teiler 3 bis 9)
+        - 7x Zehner-Einmaleins Division 
+        - 5x Addition bis 100
+        - 5x Subtraktion bis 100
+        - 4x Addition bis 1000 (vereinfacht, an Zehner orientiert)
+        - 4x Subtraktion bis 1000 (vereinfacht, an Zehner orientiert)
+
+        KLASSE 9 (Insgesamt 60 Aufgaben):
+        - 2x Wurzeln (aus Quadratzahlen 1 bis 20)
+        - 5x Terme zusammenfassen (z. B. 3x + 5x)
+        - 2x Terme ausklammern (z. B. 3(x + 4))
+        - 15x Einmaleins Multiplikation (nur aus Reihen 6, 7, 8, 9, 11, 12)
+        - 5x Einmaleins Division (nur aus Reihen 6, 7, 8, 9, 11, 12)
+        - 3x Quadratzahlen (1 bis 20)
+        - 16x Rationale Zahlen (Addition, Subtraktion, Multiplikation mit Negativen)
+        - 12x Dezimalzahlen mit Zehnerpotenzen (Multiplikation/Division mit 10, 100, 1000)
+        ====================================================================
+        */
+
+        const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const r_choice = arr => arr[Math.floor(Math.random() * arr.length)];
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Mischt das Array und stellt sicher, dass aufeinanderfolgende Ergebnisse nicht identisch sind
+        function arrangeTasks(tasks) {
+            shuffle(tasks);
+            for (let i = 1; i < tasks.length; i++) {
+                if (tasks[i].a === tasks[i - 1].a) {
+                    for (let j = i + 1; j < tasks.length; j++) {
+                        if (tasks[j].a !== tasks[i - 1].a) {
+                            let temp = tasks[i];
+                            tasks[i] = tasks[j];
+                            tasks[j] = temp;
+                            break;
+                        }
+                    }
+                }
+            }
+            return tasks;
+        }
+
+        // Generator-Funktion, die Duplikate (gleiche Aufgabe) verhindert
+        function addUniqueTask(tasks, usedTasks, count, generatorFn) {
+            let added = 0;
+            while (added < count) {
+                let task = generatorFn();
+                if (!usedTasks.has(task.q)) {
+                    usedTasks.add(task.q);
+                    tasks.push(task);
+                    added++;
+                }
+            }
+        }
+
+        function generateTasks() {
+            const level = document.getElementById('level').value;
+            let tasks = [];
+            let usedTasks = new Set();
+            
+            if (level === "6") {
+                addUniqueTask(tasks, usedTasks, 2, () => { let a = r(2, 20); return { q: `${a}^2 =`, a: a * a }; });
+                addUniqueTask(tasks, usedTasks, 17, () => { let a = r(3, 9), b = r(4, 9); return { q: `${a} \\cdot ${b} =`, a: a * b }; });
+                addUniqueTask(tasks, usedTasks, 6, () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a} \\cdot ${b} =`, a: a * b } : { q: `${b} \\cdot ${a} =`, a: a * b }; });
+                addUniqueTask(tasks, usedTasks, 10, () => { let a = r(3, 9), b = r(3, 9); return { q: `${a * b} : ${a} =`, a: b }; });
+                addUniqueTask(tasks, usedTasks, 7, () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a * b} : ${a} =`, a: b } : { q: `${a * b} : ${b} =`, a: a }; });
+                addUniqueTask(tasks, usedTasks, 5, () => { let a = r(11, 89), b = r(11, 100 - a); return { q: `${a} + ${b} =`, a: a + b }; });
+                addUniqueTask(tasks, usedTasks, 5, () => { let a = r(20, 100), b = r(11, a - 1); return { q: `${a} - ${b} =`, a: a - b }; });
+                addUniqueTask(tasks, usedTasks, 4, () => { let a = r(10, 89) * 10, b = r(1, 49) * 10 + r_choice([0, 5, r(1, 9)]); if (a + b > 1000) b = 1000 - a; return { q: `${a} + ${b} =`, a: a + b }; });
+                addUniqueTask(tasks, usedTasks, 4, () => { let a = r(20, 99) * 10, b = r(1, Math.floor(a / 10) - 1) * 10 + r_choice([0, 5, r(1, 9)]); return { q: `${a} - ${b} =`, a: a - b }; });
+            } else {
+                const pool1x1 = [6, 7, 8, 9, 11, 12];
+                addUniqueTask(tasks, usedTasks, 2, () => { let a = r(2, 20); return { q: `\\sqrt{${a * a}} =`, a: a }; });
+                addUniqueTask(tasks, usedTasks, 5, () => { 
+                    let a = r(2, 12) * r_choice([1, -1]), b = r(2, 12) * r_choice([1, -1]), v = r_choice(['x', 'y', 'a']);
+                    let op = b < 0 ? '-' : '+';
+                    let ans = a + b;
+                    let ansStr = ans === 0 ? '0' : (ans === 1 ? v : (ans === -1 ? `-${v}` : `${ans}${v}`));
+                    return { q: `${a}${v} ${op} ${Math.abs(b)}${v} =`, a: ansStr }; 
+                });
+                addUniqueTask(tasks, usedTasks, 2, () => {
+                    let a = r(2, 9), b = r(2, 9), v = r_choice(['x', 'y', 'a']);
+                    let op = r_choice(['+', '-']);
+                    let q = `${a}(${v} ${op} ${b}) =`;
+                    let aStr = op === '+' ? `${a}${v} + ${a*b}` : `${a}${v} - ${a*b}`;
+                    return { q: q, a: aStr };
+                });
+                addUniqueTask(tasks, usedTasks, 15, () => { 
+                    let a = r_choice(pool1x1), b = r_choice(pool1x1); 
+                    return { q: `${a} \\cdot ${b} =`, a: a * b }; 
+                });
+                addUniqueTask(tasks, usedTasks, 5, () => { 
+                    let a = r_choice(pool1x1), b = r_choice(pool1x1); 
+                    return Math.random() < 0.5 ? { q: `${a * b} : ${a} =`, a: b } : { q: `${a * b} : ${b} =`, a: a }; 
+                });
+                addUniqueTask(tasks, usedTasks, 3, () => { let a = r(2, 20); return { q: `${a}^2 =`, a: a * a }; });
+                addUniqueTask(tasks, usedTasks, 16, () => {
+                    let a = r(1, 15) * r_choice([1, -1]), b = r(1, 15) * r_choice([1, -1]);
+                    let op = r_choice(['+', '-', '\\cdot']);
+                    let ans = op === '+' ? a+b : (op === '-' ? a-b : a*b);
+                    let bStr = b < 0 ? `(${b})` : `${b}`;
+                    return { q: `${a} ${op} ${bStr} =`, a: ans };
+                });
+                addUniqueTask(tasks, usedTasks, 12, () => {
+                    let a = r(1, 999) / 10, p = r_choice([10, 100, 1000]);
+                    let op = r_choice(['\\cdot', ':']);
+                    let ans = op === '\\cdot' ? Number((a * p).toPrecision(10)) : Number((a / p).toPrecision(10));
+                    return { q: `${String(a).replace('.', '{,}')} ${op} ${p} =`, a: String(ans).replace('.', '{,}') };
+                });
+            }
+
+            tasks = arrangeTasks(tasks);
+            renderPages(tasks);
+        }
+
+        function renderPages(tasks) {
+            const container = document.getElementById('pages-container');
+            container.innerHTML = '';
+            container.appendChild(createPage(tasks, false));
+            container.appendChild(createPage(tasks, true));
+        }
+
+        function createPage(tasks, showAnswers) {
+            const page = document.createElement('div');
+            page.className = 'page';
+
+            const title = document.createElement('div');
+            title.className = 'header-title';
+            title.innerText = showAnswers ? 'Kopfrechnen - LÖSUNGSBLATT' : 'Tägliche Übung - Kopfrechnen';
+            page.appendChild(title);
+
+            const header = document.createElement('div');
+            header.className = 'header';
+            header.innerHTML = `<span>Name: _____________________________</span><span>Klasse: _______</span><span>Datum: ____________</span>`;
+            page.appendChild(header);
+
+            const grid = document.createElement('div');
+            grid.className = 'grid';
+
+            for (let row = 0; row < 15; row++) {
+                for (let col = 0; col < 4; col++) {
+                    let index = col * 15 + row;
+                    if (index < tasks.length) {
+                        let taskObj = tasks[index];
+                        let taskDiv = document.createElement('div');
+                        taskDiv.className = 'task';
+                        
+                        let mathSpan = document.createElement('span');
+                        let latexStr = showAnswers ? `${taskObj.q} ${taskObj.a}` : taskObj.q;
+                        
+                        katex.render(latexStr, mathSpan, { displayMode: false });
+                        taskDiv.appendChild(mathSpan);
+                        
+                        if (!showAnswers) {
+                            let dotsDiv = document.createElement('div');
+                            dotsDiv.className = 'dots';
+                            taskDiv.appendChild(dotsDiv);
+                        }
+                        
+                        grid.appendChild(taskDiv);
+                    }
+                }
+            }
+            page.appendChild(grid);
+
+            if (!showAnswers) {
+                const footer = document.createElement('div');
+                footer.className = 'footer';
+                
+                const errorsGrid = document.createElement('div');
+                errorsGrid.className = 'errors-grid';
+                for (let i = 0; i < 4; i++) {
+                    let errCol = document.createElement('div');
+                    errCol.innerText = 'Fehler: _______';
+                    errorsGrid.appendChild(errCol);
+                }
+                footer.appendChild(errorsGrid);
+
+                const totalScore = document.createElement('div');
+                totalScore.className = 'total-score';
+                totalScore.innerText = 'Richtig: _______ / 60';
+                footer.appendChild(totalScore);
+
+                page.appendChild(footer);
+            }
+
+            return page;
+        }
+
+        window.addEventListener('load', () => {
+            setTimeout(generateTasks, 100); 
+        });
+    </script>
+</body>
+</html>
