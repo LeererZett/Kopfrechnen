@@ -14,11 +14,13 @@
         .page { background: white; padding: 10mm; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; width: 297mm; height: 210mm; }
         .header { display: flex; justify-content: space-between; font-size: 13pt; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
         .header-title { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 15px; }
-        .grid { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 11px; column-gap: 25px; font-size: 14pt; }
+        .grid { display: grid; row-gap: 11px; column-gap: 25px; font-size: 14pt; }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
+        .grid-4 { grid-template-columns: repeat(4, 1fr); }
         .task { display: flex; align-items: center; }
         .dots { flex-grow: 1; border-bottom: 2px dotted #000; margin-left: 10px; height: 1em; }
         .footer { margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; }
-        .errors-grid { display: grid; grid-template-columns: repeat(4, 1fr); column-gap: 25px; font-weight: bold; font-size: 12pt; }
+        .errors-grid { display: grid; column-gap: 25px; font-weight: bold; font-size: 12pt; }
         .total-score { text-align: right; font-size: 14pt; font-weight: bold; margin-top: 10px; }
         @media print {
             .controls { display: none; }
@@ -34,6 +36,7 @@
     <div class="controls">
         <select id="level">
             <option value="6">Klasse 6</option>
+            <option value="7">Klasse 7 Hauptschule</option>
             <option value="9">Klasse 9</option>
         </select>
         <button onclick="generateTasks()">Neu generieren</button>
@@ -45,10 +48,10 @@
     <script>
         /*
         ====================================================================
-        REFERENZ DER AUFGABENVERTEILUNG (Für spätere Anpassungen)
+        REFERENZ DER AUFGABENVERTEILUNG
         ====================================================================
         
-        KLASSE 6 (Insgesamt 60 Aufgaben):
+        KLASSE 6 (60 Aufgaben, 4 Spalten):
         - 2x Quadratzahlen (1 bis 20)
         - 17x Kleines 1x1 Multiplikation (Fokus auf Faktoren 3 bis 9)
         - 6x Zehner-Einmaleins Multiplikation (Faktoren 3-9 mit 20-90)
@@ -56,18 +59,25 @@
         - 7x Zehner-Einmaleins Division 
         - 5x Addition bis 100
         - 5x Subtraktion bis 100
-        - 4x Addition bis 1000 (vereinfacht, an Zehner orientiert)
-        - 4x Subtraktion bis 1000 (vereinfacht, an Zehner orientiert)
+        - 4x Addition bis 1000 (vereinfacht)
+        - 4x Subtraktion bis 1000 (vereinfacht)
 
-        KLASSE 9 (Insgesamt 60 Aufgaben):
+        KLASSE 7 HAUPTSCHULE (45 Aufgaben, 3 Spalten):
+        - 20x Kleines 1x1 Multiplikation
+        - 10x Kleines 1x1 Division
+        - 5x Addition bis 1000 (vereinfacht)
+        - 5x Subtraktion bis 1000 (vereinfacht)
+        - 5x Zehner-Einmaleins Multiplikation (Faktoren 3-9 mit 20-90)
+
+        KLASSE 9 (60 Aufgaben, 4 Spalten):
         - 2x Wurzeln (aus Quadratzahlen 1 bis 20)
-        - 5x Terme zusammenfassen (z. B. 3x + 5x)
-        - 2x Terme ausklammern (z. B. 3(x + 4))
-        - 15x Einmaleins Multiplikation (nur aus Reihen 6, 7, 8, 9, 11, 12)
-        - 5x Einmaleins Division (nur aus Reihen 6, 7, 8, 9, 11, 12)
+        - 5x Terme zusammenfassen
+        - 2x Terme ausklammern
+        - 15x Einmaleins Multiplikation (Reihen 6, 7, 8, 9, 11, 12)
+        - 5x Einmaleins Division (Reihen 6, 7, 8, 9, 11, 12)
         - 3x Quadratzahlen (1 bis 20)
-        - 16x Rationale Zahlen (Addition, Subtraktion, Multiplikation mit Negativen)
-        - 12x Dezimalzahlen mit Zehnerpotenzen (Multiplikation/Division mit 10, 100, 1000)
+        - 16x Rationale Zahlen 
+        - 12x Dezimalzahlen mit Zehnerpotenzen 
         ====================================================================
         */
 
@@ -81,7 +91,6 @@
             }
         }
 
-        // Mischt das Array und stellt sicher, dass aufeinanderfolgende Ergebnisse nicht identisch sind
         function arrangeTasks(tasks) {
             shuffle(tasks);
             for (let i = 1; i < tasks.length; i++) {
@@ -99,7 +108,6 @@
             return tasks;
         }
 
-        // Generator-Funktion, die Duplikate (gleiche Aufgabe) verhindert
         function addUniqueTask(tasks, usedTasks, count, generatorFn) {
             let added = 0;
             while (added < count) {
@@ -127,6 +135,14 @@
                 addUniqueTask(tasks, usedTasks, 5, () => { let a = r(20, 100), b = r(11, a - 1); return { q: `${a} - ${b} =`, a: a - b }; });
                 addUniqueTask(tasks, usedTasks, 4, () => { let a = r(10, 89) * 10, b = r(1, 49) * 10 + r_choice([0, 5, r(1, 9)]); if (a + b > 1000) b = 1000 - a; return { q: `${a} + ${b} =`, a: a + b }; });
                 addUniqueTask(tasks, usedTasks, 4, () => { let a = r(20, 99) * 10, b = r(1, Math.floor(a / 10) - 1) * 10 + r_choice([0, 5, r(1, 9)]); return { q: `${a} - ${b} =`, a: a - b }; });
+            
+            } else if (level === "7") {
+                addUniqueTask(tasks, usedTasks, 20, () => { let a = r(2, 10), b = r(2, 10); return { q: `${a} \\cdot ${b} =`, a: a * b }; });
+                addUniqueTask(tasks, usedTasks, 10, () => { let a = r(2, 10), b = r(2, 10); return { q: `${a * b} : ${a} =`, a: b }; });
+                addUniqueTask(tasks, usedTasks, 5, () => { let a = r(10, 89) * 10, b = r(1, 49) * 10 + r_choice([0, 5, r(1, 9)]); if (a + b > 1000) b = 1000 - a; return { q: `${a} + ${b} =`, a: a + b }; });
+                addUniqueTask(tasks, usedTasks, 5, () => { let a = r(20, 99) * 10, b = r(1, Math.floor(a / 10) - 1) * 10 + r_choice([0, 5, r(1, 9)]); return { q: `${a} - ${b} =`, a: a - b }; });
+                addUniqueTask(tasks, usedTasks, 5, () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a} \\cdot ${b} =`, a: a * b } : { q: `${b} \\cdot ${a} =`, a: a * b }; });
+
             } else {
                 const pool1x1 = [6, 7, 8, 9, 11, 12];
                 addUniqueTask(tasks, usedTasks, 2, () => { let a = r(2, 20); return { q: `\\sqrt{${a * a}} =`, a: a }; });
@@ -182,10 +198,12 @@
         function createPage(tasks, showAnswers) {
             const page = document.createElement('div');
             page.className = 'page';
+            
+            const cols = tasks.length === 45 ? 3 : 4;
 
             const title = document.createElement('div');
             title.className = 'header-title';
-            title.innerText = showAnswers ? 'Kopfrechnen - LÖSUNGSBLATT' : 'Tägliche Übung - Kopfrechnen';
+            title.innerText = showAnswers ? 'Kopfrechnen - LÖSUNGSBLATT' : 'Kopfrechnen (10 Minuten)';
             page.appendChild(title);
 
             const header = document.createElement('div');
@@ -194,10 +212,10 @@
             page.appendChild(header);
 
             const grid = document.createElement('div');
-            grid.className = 'grid';
+            grid.className = `grid grid-${cols}`;
 
             for (let row = 0; row < 15; row++) {
-                for (let col = 0; col < 4; col++) {
+                for (let col = 0; col < cols; col++) {
                     let index = col * 15 + row;
                     if (index < tasks.length) {
                         let taskObj = tasks[index];
@@ -227,8 +245,9 @@
                 footer.className = 'footer';
                 
                 const errorsGrid = document.createElement('div');
-                errorsGrid.className = 'errors-grid';
-                for (let i = 0; i < 4; i++) {
+                errorsGrid.className = `errors-grid grid-${cols}`;
+                
+                for (let i = 0; i < cols; i++) {
                     let errCol = document.createElement('div');
                     errCol.innerText = 'Fehler: _______';
                     errorsGrid.appendChild(errCol);
@@ -237,7 +256,7 @@
 
                 const totalScore = document.createElement('div');
                 totalScore.className = 'total-score';
-                totalScore.innerText = 'Richtig: _______ / 60';
+                totalScore.innerText = `Richtig: _______ / ${tasks.length}`;
                 footer.appendChild(totalScore);
 
                 page.appendChild(footer);
