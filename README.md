@@ -2,16 +2,26 @@
 
 Dieses Projekt generiert dynamische Arbeitsblätter (inklusive Lösungsblätter) für das Kopfrechnen. 
 
+## Aufgabenverteilung Klasse 5 (45 Aufgaben)
+* **18x** Kleines Einmaleins - Multiplikation (Fokus auf Faktoren 3 bis 9)
+* **10x** Kleines Einmaleins - Division (Fokus auf Teiler 3 bis 9)
+* **5x** Zehner-Einmaleins - Multiplikation (Faktoren 3 bis 9 mit 20 bis 90)
+* **4x** Zehner-Einmaleins - Division 
+* **3x** Addition bis 100
+* **3x** Subtraktion bis 100
+* **1x** Addition bis 1000 (vereinfacht, an Zehnern orientiert)
+* **1x** Subtraktion bis 1000 (vereinfacht, an Zehnern orientiert)
+
 ## Aufgabenverteilung Klasse 6 (60 Aufgaben)
 * **2x** Quadratzahlen (1 bis 20)
-* **17x** Kleines Einmaleins - Multiplikation (Fokus auf Faktoren 3 bis 9)
+* **21x** Kleines Einmaleins - Multiplikation (Fokus auf Faktoren 3 bis 9)
 * **6x** Zehner-Einmaleins - Multiplikation (Faktoren 3 bis 9 mit 20 bis 90)
 * **10x** Kleines Einmaleins - Division (Fokus auf Teiler 3 bis 9)
 * **7x** Zehner-Einmaleins - Division 
-* **5x** Addition bis 100
-* **5x** Subtraktion bis 100
-* **4x** Addition bis 1000 (vereinfacht, an Zehnern orientiert)
-* **4x** Subtraktion bis 1000 (vereinfacht, an Zehnern orientiert)
+* **4x** Addition bis 100
+* **4x** Subtraktion bis 100
+* **3x** Addition bis 1000 (vereinfacht, an Zehnern orientiert)
+* **3x** Subtraktion bis 1000 (vereinfacht, an Zehnern orientiert)
 
 ## Aufgabenverteilung Klasse 7 Hauptschule (45 Aufgaben)
 * **20x** Kleines Einmaleins - Multiplikation
