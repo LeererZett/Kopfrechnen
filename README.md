@@ -13,6 +13,13 @@ Dieses Projekt generiert dynamische Arbeitsblätter (inklusive Lösungsblätter)
 * **4x** Addition bis 1000 (vereinfacht, an Zehnern orientiert)
 * **4x** Subtraktion bis 1000 (vereinfacht, an Zehnern orientiert)
 
+## Aufgabenverteilung Klasse 7 Hauptschule (45 Aufgaben)
+* **20x** Kleines Einmaleins - Multiplikation
+* **10x** Kleines Einmaleins - Division
+* **5x** Addition bis 1000 (vereinfacht)
+* **5x** Subtraktion bis 1000 (vereinfacht)
+* **5x** Zehner-Einmaleins - Multiplikation (Faktoren 3 bis 9 mit Nullen, 20 bis 90)
+
 ## Aufgabenverteilung Klasse 9 (60 Aufgaben)
 * **2x** Wurzeln (aus Quadratzahlen 1 bis 20)
 * **5x** Terme zusammenfassen (z. B. 3x + 5x)
