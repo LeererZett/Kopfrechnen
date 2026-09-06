@@ -11,33 +11,35 @@
         body { font-family: sans-serif; margin: 15px; background: #fafafa; }
         .controls { background: #f0f0f0; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ccc; }
         
-        .top-bar { display: flex; align-items: center; justify-content: space-between; }
+        .top-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
         button, select { font-size: 16px; padding: 5px 10px; margin-right: 10px; }
         button:disabled { background: #ccc; color: #666; cursor: not-allowed; }
         
+        .master-slider-container {
+            background: #e0e0e0; padding: 10px 15px; border-radius: 6px;
+            display: flex; align-items: center; margin-bottom: 5px;
+        }
+        .master-slider-container label { width: 220px; font-weight: bold; font-size: 15px; }
+        .master-slider-container input { flex-grow: 1; margin: 0 10px; }
+        .master-slider-container span { width: 40px; text-align: right; font-weight: bold; font-family: monospace; font-size: 16px;}
+
         .sliders-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #ccc;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+            padding-top: 15px; border-top: 1px solid #ccc;
         }
         .slider-group { display: flex; align-items: center; }
         .slider-group label { width: 220px; font-size: 14px; }
         .slider-group input { flex-grow: 1; margin: 0 10px; }
         .slider-group span { width: 30px; text-align: right; font-weight: bold; font-family: monospace; font-size: 14px;}
         
-        .sum-container { margin-top: 15px; font-weight: bold; font-size: 16px; text-align: right; }
+        .sum-container { font-weight: bold; font-size: 18px; text-align: right; }
         .error { color: #d32f2f; }
         .success { color: #2e7d32; }
 
         .page { background: white; padding: 10mm; box-shadow: 0 0 10px rgba(0,0,0,0.1); margin-bottom: 20px; box-sizing: border-box; width: 297mm; height: 210mm; }
         .header { display: flex; justify-content: space-between; font-size: 13pt; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 15px; }
         .header-title { text-align: center; font-size: 16pt; font-weight: bold; margin-bottom: 15px; }
-        .grid { display: grid; row-gap: 11px; column-gap: 25px; font-size: 14pt; }
-        .grid-3 { grid-template-columns: repeat(3, 1fr); }
-        .grid-4 { grid-template-columns: repeat(4, 1fr); }
+        .grid { display: grid; column-gap: 25px; }
         .task { display: flex; align-items: center; }
         .dots { flex-grow: 1; border-bottom: 2px dotted #000; margin-left: 10px; height: 1em; }
         .footer { margin-top: 15px; border-top: 1px solid #000; padding-top: 10px; }
@@ -69,6 +71,13 @@
             </div>
             <div id="sum-display" class="sum-container"></div>
         </div>
+        
+        <div class="master-slider-container">
+            <label>Gesamtzahl Aufgaben:</label>
+            <input type="range" id="master-target" min="30" max="100" step="1" oninput="updateMasterTarget()">
+            <span id="master-target-val"></span>
+        </div>
+
         <div id="sliders-container" class="sliders-grid"></div>
     </div>
 
@@ -78,10 +87,10 @@
         const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
         const r_choice = arr => arr[Math.floor(Math.random() * arr.length)];
 
-        // Zentrale Konfiguration aller Aufgaben und Verteilungen
+        // Zentrale Konfiguration (inklusive der Standard-Zielwerte)
         const config = {
             "5": {
-                target: 45, cols: 3,
+                defaultTarget: 45,
                 categories: [
                     { id: "c5_1x1_m", label: "Kleines 1x1 (Mult.)", default: 18, gen: () => { let a = r(3, 9), b = r(3, 9); return { q: `${a} \\cdot ${b} =`, a: a * b }; } },
                     { id: "c5_1x1_d", label: "Kleines 1x1 (Div.)", default: 10, gen: () => { let a = r(3, 9), b = r(3, 9); return { q: `${a * b} : ${a} =`, a: b }; } },
@@ -94,7 +103,7 @@
                 ]
             },
             "6": {
-                target: 60, cols: 4,
+                defaultTarget: 60,
                 categories: [
                     { id: "c6_quad", label: "Quadratzahlen", default: 2, gen: () => { let a = r(2, 20); return { q: `${a}^2 =`, a: a * a }; } },
                     { id: "c6_1x1_m", label: "Kleines 1x1 (Mult.)", default: 21, gen: () => { let a = r(3, 9), b = r(4, 9); return { q: `${a} \\cdot ${b} =`, a: a * b }; } },
@@ -108,7 +117,7 @@
                 ]
             },
             "7": {
-                target: 45, cols: 3,
+                defaultTarget: 45,
                 categories: [
                     { id: "c7_1x1_m", label: "Kleines 1x1 (Mult.)", default: 20, gen: () => { let a = r(2, 10), b = r(2, 10); return { q: `${a} \\cdot ${b} =`, a: a * b }; } },
                     { id: "c7_1x1_d", label: "Kleines 1x1 (Div.)", default: 10, gen: () => { let a = r(2, 10), b = r(2, 10); return { q: `${a * b} : ${a} =`, a: b }; } },
@@ -118,7 +127,7 @@
                 ]
             },
             "9": {
-                target: 60, cols: 4,
+                defaultTarget: 60,
                 categories: [
                     { id: "c9_wurzel", label: "Wurzeln", default: 2, gen: () => { let a = r(2, 20); return { q: `\\sqrt{${a * a}} =`, a: a }; } },
                     { id: "c9_term_z", label: "Terme zusammenfassen", default: 5, gen: () => { let a = r(2, 12) * r_choice([1, -1]), b = r(2, 12) * r_choice([1, -1]), v = r_choice(['x', 'y', 'a']); let op = b < 0 ? '-' : '+'; let ans = a + b; let ansStr = ans === 0 ? '0' : (ans === 1 ? v : (ans === -1 ? `-${v}` : `${ans}${v}`)); return { q: `${a}${v} ${op} ${Math.abs(b)}${v} =`, a: ansStr }; } },
@@ -135,16 +144,22 @@
         function initSliders() {
             const level = document.getElementById('level').value;
             const currentConfig = config[level];
+            
+            // Hauptregler auf den Standardwert der Klasse setzen
+            const masterSlider = document.getElementById('master-target');
+            masterSlider.value = currentConfig.defaultTarget;
+            document.getElementById('master-target-val').innerText = currentConfig.defaultTarget;
+
             const container = document.getElementById('sliders-container');
             container.innerHTML = '';
 
+            // Kategorien-Regler aufbauen (erlauben theoretisch auch bis zu 100 pro Kategorie)
             currentConfig.categories.forEach(cat => {
                 const group = document.createElement('div');
                 group.className = 'slider-group';
-                
                 group.innerHTML = `
                     <label>${cat.label}</label>
-                    <input type="range" id="${cat.id}" min="0" max="${currentConfig.target}" value="${cat.default}" oninput="updateSum()">
+                    <input type="range" id="${cat.id}" min="0" max="100" value="${cat.default}" oninput="updateSum()">
                     <span id="${cat.id}_val">${cat.default}</span>
                 `;
                 container.appendChild(group);
@@ -152,11 +167,18 @@
             updateSum();
         }
 
+        function updateMasterTarget() {
+            const val = document.getElementById('master-target').value;
+            document.getElementById('master-target-val').innerText = val;
+            updateSum(); // Löst eine Prüfung aus, ob die Summe der Kategorien noch passt
+        }
+
         function updateSum() {
             const level = document.getElementById('level').value;
             const currentConfig = config[level];
+            const currentTarget = parseInt(document.getElementById('master-target').value);
+            
             let sum = 0;
-
             currentConfig.categories.forEach(cat => {
                 const val = parseInt(document.getElementById(cat.id).value);
                 document.getElementById(`${cat.id}_val`).innerText = val;
@@ -166,9 +188,9 @@
             const sumDisplay = document.getElementById('sum-display');
             const genBtn = document.getElementById('gen-btn');
             
-            sumDisplay.innerText = `Summe: ${sum} / ${currentConfig.target}`;
+            sumDisplay.innerText = `Summe: ${sum} / ${currentTarget}`;
             
-            if (sum === currentConfig.target) {
+            if (sum === currentTarget) {
                 sumDisplay.className = 'sum-container success';
                 genBtn.disabled = false;
             } else {
@@ -203,8 +225,8 @@
 
         function addUniqueTask(tasks, usedTasks, count, generatorFn) {
             let added = 0;
-            let attempts = 0; // Verhindert Endlosschleifen bei zu hohen Slider-Werten
-            while (added < count && attempts < 1000) {
+            let attempts = 0; 
+            while (added < count && attempts < 1500) {
                 let task = generatorFn();
                 if (!usedTasks.has(task.q)) {
                     usedTasks.add(task.q);
@@ -221,7 +243,6 @@
             let tasks = [];
             let usedTasks = new Set();
             
-            // Lese die aktuellen Werte aus den Slidern aus und generiere die Aufgaben
             currentConfig.categories.forEach(cat => {
                 const count = parseInt(document.getElementById(cat.id).value);
                 if (count > 0) {
@@ -230,20 +251,32 @@
             });
 
             tasks = arrangeTasks(tasks);
-            renderPages(tasks, currentConfig.cols);
+            renderPages(tasks);
         }
 
-        function renderPages(tasks, cols) {
+        // Dynamische Layout-Anpassung basierend auf der Gesamtanzahl der Aufgaben
+        function getGridLayout(totalTasks) {
+            if (totalTasks <= 45) return { cols: 3, fontSize: "14pt", rowGap: "11px" };
+            if (totalTasks <= 64) return { cols: 4, fontSize: "14pt", rowGap: "11px" };
+            if (totalTasks <= 80) return { cols: 5, fontSize: "12pt", rowGap: "8px" };
+            return { cols: 5, fontSize: "10.5pt", rowGap: "5px" }; // Bis 100 Aufgaben (20 Zeilen)
+        }
+
+        function renderPages(tasks) {
             const container = document.getElementById('pages-container');
             container.innerHTML = '';
-            container.appendChild(createPage(tasks, cols, false));
-            container.appendChild(createPage(tasks, cols, true));
+            container.appendChild(createPage(tasks, false));
+            container.appendChild(createPage(tasks, true));
         }
 
-        function createPage(tasks, cols, showAnswers) {
+        function createPage(tasks, showAnswers) {
             const page = document.createElement('div');
             page.className = 'page';
             
+            const layout = getGridLayout(tasks.length);
+            const cols = layout.cols;
+            const rows = Math.ceil(tasks.length / cols);
+
             const title = document.createElement('div');
             title.className = 'header-title';
             title.innerText = showAnswers ? 'Kopfrechnen - LÖSUNGSBLATT' : 'Kopfrechnen (10 Minuten)';
@@ -255,11 +288,15 @@
             page.appendChild(header);
 
             const grid = document.createElement('div');
-            grid.className = `grid grid-${cols}`;
+            grid.className = 'grid';
+            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            grid.style.fontSize = layout.fontSize;
+            grid.style.rowGap = layout.rowGap;
 
-            for (let row = 0; row < 15; row++) {
+            // Rendern in Spalten (von oben nach unten, dann nächste Spalte)
+            for (let row = 0; row < rows; row++) {
                 for (let col = 0; col < cols; col++) {
-                    let index = col * 15 + row;
+                    let index = col * rows + row;
                     if (index < tasks.length) {
                         let taskObj = tasks[index];
                         let taskDiv = document.createElement('div');
@@ -288,7 +325,8 @@
                 footer.className = 'footer';
                 
                 const errorsGrid = document.createElement('div');
-                errorsGrid.className = `errors-grid grid-${cols}`;
+                errorsGrid.className = 'errors-grid';
+                errorsGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
                 
                 for (let i = 0; i < cols; i++) {
                     let errCol = document.createElement('div');
@@ -308,7 +346,6 @@
             return page;
         }
 
-        // Initiale Darstellung beim Laden der Seite
         window.addEventListener('load', () => {
             initSliders();
             setTimeout(generateTasks, 100); 
