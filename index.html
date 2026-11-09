@@ -19,7 +19,7 @@
             background: #e0e0e0; padding: 10px 15px; border-radius: 6px;
             display: flex; align-items: center; margin-bottom: 5px;
         }
-        .master-slider-container label { width: 220px; font-weight: bold; font-size: 15px; }
+        .master-slider-container label { width: 230px; font-weight: bold; font-size: 15px; }
         .master-slider-container input { flex-grow: 1; margin: 0 10px; }
         .master-slider-container span { width: 40px; text-align: right; font-weight: bold; font-family: monospace; font-size: 16px;}
 
@@ -28,7 +28,7 @@
             padding-top: 15px; border-top: 1px solid #ccc;
         }
         .slider-group { display: flex; align-items: center; }
-        .slider-group label { width: 220px; font-size: 14px; }
+        .slider-group label { width: 230px; font-size: 14px; }
         .slider-group input { flex-grow: 1; margin: 0 10px; }
         .slider-group span { width: 30px; text-align: right; font-weight: bold; font-family: monospace; font-size: 14px;}
         
@@ -84,272 +84,96 @@
     <div id="pages-container"></div>
 
     <script>
+        /*
+        ====================================================================
+        REFERENZ DER STANDARD-AUFGABENVERTEILUNG
+        ====================================================================
+        KLASSE 5 (Standard: 45 Aufgaben, 3 Spalten):
+        - 18x Kleines 1x1 Multiplikation (Faktoren 3 bis 9)
+        - 10x Kleines 1x1 Division (Teiler 3 bis 9)
+        - 5x Zehner-Einmaleins Multiplikation 
+        - 4x Zehner-Einmaleins Division 
+        - 3x Addition bis 100 | 3x Subtraktion bis 100
+        - 1x Addition bis 1000 | 1x Subtraktion bis 1000
+
+        KLASSE 6 (Standard: 60 Aufgaben, 4 Spalten):
+        - 2x Quadratzahlen (1 bis 20)
+        - 21x Kleines 1x1 Multiplikation (Faktoren 3 bis 9)
+        - 6x Zehner-Einmaleins Multiplikation 
+        - 10x Kleines 1x1 Division 
+        - 7x Zehner-Einmaleins Division 
+        - 4x Addition bis 100 | 4x Subtraktion bis 100
+        - 3x Addition bis 1000 | 3x Subtraktion bis 1000
+
+        KLASSE 7 HAUPTSCHULE (Standard: 45 Aufgaben, 3 Spalten):
+        - 20x Kleines 1x1 Multiplikation (Faktoren 2 bis 10)
+        - 10x Kleines 1x1 Division (Teiler 2 bis 10)
+        - 5x Zehner-Einmaleins Multiplikation 
+        - 5x Addition bis 1000 | 5x Subtraktion bis 1000
+
+        KLASSE 9 (Standard: 60 Aufgaben, 4 Spalten):
+        - 2x Wurzeln (aus Quadratzahlen 1 bis 20 und 25)
+        - 3x Quadratzahlen (1 bis 20 und 25)
+        - 4x Quadrat & Wurzel mit verschobenem Komma / Zehnerpotenzen (z. B. \sqrt{0,0049}, 0,12^2, 30^2)
+        - 5x Terme zusammenfassen
+        - 2x Terme ausklammern
+        - 15x Einmaleins Multiplikation (Reihen 6, 7, 8, 9, 11, 12)
+        - 5x Einmaleins Division (Reihen 6, 7, 8, 9, 11, 12)
+        - 14x Rationale Zahlen 
+        - 10x Dezimalzahlen mit Zehnerpotenzen 
+        ====================================================================
+        */
+
         const r = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
         const r_choice = arr => arr[Math.floor(Math.random() * arr.length)];
+        const pairKey = (prefix, x, y) => `${prefix}_${Math.min(x, y)}_${Math.max(x, y)}`;
 
-        // Zentrale Konfiguration (inklusive der Standard-Zielwerte)
+        // Formatiert Dezimalzahlen exakt ohne Floating-Point-Artefakte ins deutsche Komma-Format für KaTeX
+        function formatDec(num, decimals) {
+            let s = num.toFixed(decimals);
+            if (decimals > 0) {
+                s = s.replace(/0+$/, '').replace(/\.$/, '');
+            }
+            return s.replace('.', '{,}');
+        }
+
+        // Generator für Quadratzahlen (1-20, 25) und Wurzeln mit Komma-Verschiebung / Zehnerpotenzen
+        function genQuadRootShifted() {
+            const bases = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25];
+            let b = r_choice(bases);
+            // Bei Zehnerzahlen (10, 20) nur Verschiebung ins Dezimale (-1, -2), sonst auch +1 (z.B. 30^2 = 900)
+            let shifts = (b % 10 === 0) ? [-2, -1] : [-2, -1, 1];
+            let k = r_choice(shifts);
+            let isRoot = Math.random() < 0.5;
+
+            let valStr, sqStr;
+            if (k === 1) {
+                valStr = `${b * 10}`;
+                sqStr = `${b * b * 100}`;
+            } else if (k === -1) {
+                valStr = formatDec(b / 10, 1);
+                sqStr = formatDec((b * b) / 100, 2);
+            } else {
+                valStr = formatDec(b / 100, 2);
+                sqStr = formatDec((b * b) / 10000, 4);
+            }
+
+            if (isRoot) {
+                return { q: `\\sqrt{${sqStr}} =`, a: valStr, canon: `qr_shift_${b}_${k}` };
+            } else {
+                return { q: `${valStr}^2 =`, a: sqStr, canon: `qr_shift_${b}_${k}` };
+            }
+        }
+
+        const bases9 = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 25];
+        const pool9_1x1 = [6, 7, 8, 9, 11, 12];
+
         const config = {
             "5": {
                 defaultTarget: 45,
                 categories: [
-                    { id: "c5_1x1_m", label: "Kleines 1x1 (Mult.)", default: 18, gen: () => { let a = r(3, 9), b = r(3, 9); return { q: `${a} \\cdot ${b} =`, a: a * b }; } },
-                    { id: "c5_1x1_d", label: "Kleines 1x1 (Div.)", default: 10, gen: () => { let a = r(3, 9), b = r(3, 9); return { q: `${a * b} : ${a} =`, a: b }; } },
-                    { id: "c5_z1x1_m", label: "Zehner-1x1 (Mult.)", default: 5, gen: () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a} \\cdot ${b} =`, a: a * b } : { q: `${b} \\cdot ${a} =`, a: a * b }; } },
-                    { id: "c5_z1x1_d", label: "Zehner-1x1 (Div.)", default: 4, gen: () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a * b} : ${a} =`, a: b } : { q: `${a * b} : ${b} =`, a: a }; } },
-                    { id: "c5_add100", label: "Addition bis 100", default: 3, gen: () => { let a = r(11, 89), b = r(11, 100 - a); return { q: `${a} + ${b} =`, a: a + b }; } },
-                    { id: "c5_sub100", label: "Subtraktion bis 100", default: 3, gen: () => { let a = r(20, 100), b = r(11, a - 1); return { q: `${a} - ${b} =`, a: a - b }; } },
-                    { id: "c5_add1000", label: "Addition bis 1000", default: 1, gen: () => { let a = r(10, 89) * 10, b = r(1, 49) * 10 + r_choice([0, 5, r(1, 9)]); if (a + b > 1000) b = 1000 - a; return { q: `${a} + ${b} =`, a: a + b }; } },
-                    { id: "c5_sub1000", label: "Subtraktion bis 1000", default: 1, gen: () => { let a = r(20, 99) * 10, b = r(1, Math.floor(a / 10) - 1) * 10 + r_choice([0, 5, r(1, 9)]); return { q: `${a} - ${b} =`, a: a - b }; } }
-                ]
-            },
-            "6": {
-                defaultTarget: 60,
-                categories: [
-                    { id: "c6_quad", label: "Quadratzahlen", default: 2, gen: () => { let a = r(2, 20); return { q: `${a}^2 =`, a: a * a }; } },
-                    { id: "c6_1x1_m", label: "Kleines 1x1 (Mult.)", default: 21, gen: () => { let a = r(3, 9), b = r(4, 9); return { q: `${a} \\cdot ${b} =`, a: a * b }; } },
-                    { id: "c6_z1x1_m", label: "Zehner-1x1 (Mult.)", default: 6, gen: () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a} \\cdot ${b} =`, a: a * b } : { q: `${b} \\cdot ${a} =`, a: a * b }; } },
-                    { id: "c6_1x1_d", label: "Kleines 1x1 (Div.)", default: 10, gen: () => { let a = r(3, 9), b = r(3, 9); return { q: `${a * b} : ${a} =`, a: b }; } },
-                    { id: "c6_z1x1_d", label: "Zehner-1x1 (Div.)", default: 7, gen: () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a * b} : ${a} =`, a: b } : { q: `${a * b} : ${b} =`, a: a }; } },
-                    { id: "c6_add100", label: "Addition bis 100", default: 4, gen: () => { let a = r(11, 89), b = r(11, 100 - a); return { q: `${a} + ${b} =`, a: a + b }; } },
-                    { id: "c6_sub100", label: "Subtraktion bis 100", default: 4, gen: () => { let a = r(20, 100), b = r(11, a - 1); return { q: `${a} - ${b} =`, a: a - b }; } },
-                    { id: "c6_add1000", label: "Addition bis 1000", default: 3, gen: () => { let a = r(10, 89) * 10, b = r(1, 49) * 10 + r_choice([0, 5, r(1, 9)]); if (a + b > 1000) b = 1000 - a; return { q: `${a} + ${b} =`, a: a + b }; } },
-                    { id: "c6_sub1000", label: "Subtraktion bis 1000", default: 3, gen: () => { let a = r(20, 99) * 10, b = r(1, Math.floor(a / 10) - 1) * 10 + r_choice([0, 5, r(1, 9)]); return { q: `${a} - ${b} =`, a: a - b }; } }
-                ]
-            },
-            "7": {
-                defaultTarget: 45,
-                categories: [
-                    { id: "c7_1x1_m", label: "Kleines 1x1 (Mult.)", default: 20, gen: () => { let a = r(2, 10), b = r(2, 10); return { q: `${a} \\cdot ${b} =`, a: a * b }; } },
-                    { id: "c7_1x1_d", label: "Kleines 1x1 (Div.)", default: 10, gen: () => { let a = r(2, 10), b = r(2, 10); return { q: `${a * b} : ${a} =`, a: b }; } },
-                    { id: "c7_z1x1_m", label: "Zehner-1x1 (Mult.)", default: 5, gen: () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a} \\cdot ${b} =`, a: a * b } : { q: `${b} \\cdot ${a} =`, a: a * b }; } },
-                    { id: "c7_add1000", label: "Addition bis 1000", default: 5, gen: () => { let a = r(10, 89) * 10, b = r(1, 49) * 10 + r_choice([0, 5, r(1, 9)]); if (a + b > 1000) b = 1000 - a; return { q: `${a} + ${b} =`, a: a + b }; } },
-                    { id: "c7_sub1000", label: "Subtraktion bis 1000", default: 5, gen: () => { let a = r(20, 99) * 10, b = r(1, Math.floor(a / 10) - 1) * 10 + r_choice([0, 5, r(1, 9)]); return { q: `${a} - ${b} =`, a: a - b }; } }
-                ]
-            },
-            "9": {
-                defaultTarget: 60,
-                categories: [
-                    { id: "c9_wurzel", label: "Wurzeln", default: 2, gen: () => { let a = r(2, 20); return { q: `\\sqrt{${a * a}} =`, a: a }; } },
-                    { id: "c9_term_z", label: "Terme zusammenfassen", default: 5, gen: () => { let a = r(2, 12) * r_choice([1, -1]), b = r(2, 12) * r_choice([1, -1]), v = r_choice(['x', 'y', 'a']); let op = b < 0 ? '-' : '+'; let ans = a + b; let ansStr = ans === 0 ? '0' : (ans === 1 ? v : (ans === -1 ? `-${v}` : `${ans}${v}`)); return { q: `${a}${v} ${op} ${Math.abs(b)}${v} =`, a: ansStr }; } },
-                    { id: "c9_term_a", label: "Terme ausklammern", default: 2, gen: () => { let a = r(2, 9), b = r(2, 9), v = r_choice(['x', 'y', 'a']); let op = r_choice(['+', '-']); let q = `${a}(${v} ${op} ${b}) =`; let aStr = op === '+' ? `${a}${v} + ${a*b}` : `${a}${v} - ${a*b}`; return { q: q, a: aStr }; } },
-                    { id: "c9_1x1_m", label: "1x1 (Mult. 6-12)", default: 15, gen: () => { const pool = [6, 7, 8, 9, 11, 12]; let a = r_choice(pool), b = r_choice(pool); return { q: `${a} \\cdot ${b} =`, a: a * b }; } },
-                    { id: "c9_1x1_d", label: "1x1 (Div. 6-12)", default: 5, gen: () => { const pool = [6, 7, 8, 9, 11, 12]; let a = r_choice(pool), b = r_choice(pool); return Math.random() < 0.5 ? { q: `${a * b} : ${a} =`, a: b } : { q: `${a * b} : ${b} =`, a: a }; } },
-                    { id: "c9_quad", label: "Quadratzahlen", default: 3, gen: () => { let a = r(2, 20); return { q: `${a}^2 =`, a: a * a }; } },
-                    { id: "c9_rat", label: "Rationale Zahlen", default: 16, gen: () => { let a = r(1, 15) * r_choice([1, -1]), b = r(1, 15) * r_choice([1, -1]); let op = r_choice(['+', '-', '\\cdot']); let ans = op === '+' ? a+b : (op === '-' ? a-b : a*b); let bStr = b < 0 ? `(${b})` : `${b}`; return { q: `${a} ${op} ${bStr} =`, a: ans }; } },
-                    { id: "c9_dez", label: "Dez. mit Zehnerpotenz", default: 12, gen: () => { let a = r(1, 999) / 10, p = r_choice([10, 100, 1000]); let op = r_choice(['\\cdot', ':']); let ans = op === '\\cdot' ? Number((a * p).toPrecision(10)) : Number((a / p).toPrecision(10)); return { q: `${String(a).replace('.', '{,}')} ${op} ${p} =`, a: String(ans).replace('.', '{,}') }; } }
-                ]
-            }
-        };
-
-        function initSliders() {
-            const level = document.getElementById('level').value;
-            const currentConfig = config[level];
-            
-            // Hauptregler auf den Standardwert der Klasse setzen
-            const masterSlider = document.getElementById('master-target');
-            masterSlider.value = currentConfig.defaultTarget;
-            document.getElementById('master-target-val').innerText = currentConfig.defaultTarget;
-
-            const container = document.getElementById('sliders-container');
-            container.innerHTML = '';
-
-            // Kategorien-Regler aufbauen (erlauben theoretisch auch bis zu 100 pro Kategorie)
-            currentConfig.categories.forEach(cat => {
-                const group = document.createElement('div');
-                group.className = 'slider-group';
-                group.innerHTML = `
-                    <label>${cat.label}</label>
-                    <input type="range" id="${cat.id}" min="0" max="100" value="${cat.default}" oninput="updateSum()">
-                    <span id="${cat.id}_val">${cat.default}</span>
-                `;
-                container.appendChild(group);
-            });
-            updateSum();
-        }
-
-        function updateMasterTarget() {
-            const val = document.getElementById('master-target').value;
-            document.getElementById('master-target-val').innerText = val;
-            updateSum(); // Löst eine Prüfung aus, ob die Summe der Kategorien noch passt
-        }
-
-        function updateSum() {
-            const level = document.getElementById('level').value;
-            const currentConfig = config[level];
-            const currentTarget = parseInt(document.getElementById('master-target').value);
-            
-            let sum = 0;
-            currentConfig.categories.forEach(cat => {
-                const val = parseInt(document.getElementById(cat.id).value);
-                document.getElementById(`${cat.id}_val`).innerText = val;
-                sum += val;
-            });
-
-            const sumDisplay = document.getElementById('sum-display');
-            const genBtn = document.getElementById('gen-btn');
-            
-            sumDisplay.innerText = `Summe: ${sum} / ${currentTarget}`;
-            
-            if (sum === currentTarget) {
-                sumDisplay.className = 'sum-container success';
-                genBtn.disabled = false;
-            } else {
-                sumDisplay.className = 'sum-container error';
-                genBtn.disabled = true;
-            }
-        }
-
-        function shuffle(array) {
-            for (let i = array.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [array[i], array[j]] = [array[j], array[i]];
-            }
-        }
-
-        function arrangeTasks(tasks) {
-            shuffle(tasks);
-            for (let i = 1; i < tasks.length; i++) {
-                if (tasks[i].a === tasks[i - 1].a) {
-                    for (let j = i + 1; j < tasks.length; j++) {
-                        if (tasks[j].a !== tasks[i - 1].a) {
-                            let temp = tasks[i];
-                            tasks[i] = tasks[j];
-                            tasks[j] = temp;
-                            break;
-                        }
-                    }
-                }
-            }
-            return tasks;
-        }
-
-        function addUniqueTask(tasks, usedTasks, count, generatorFn) {
-            let added = 0;
-            let attempts = 0; 
-            while (added < count && attempts < 1500) {
-                let task = generatorFn();
-                if (!usedTasks.has(task.q)) {
-                    usedTasks.add(task.q);
-                    tasks.push(task);
-                    added++;
-                }
-                attempts++;
-            }
-        }
-
-        function generateTasks() {
-            const level = document.getElementById('level').value;
-            const currentConfig = config[level];
-            let tasks = [];
-            let usedTasks = new Set();
-            
-            currentConfig.categories.forEach(cat => {
-                const count = parseInt(document.getElementById(cat.id).value);
-                if (count > 0) {
-                    addUniqueTask(tasks, usedTasks, count, cat.gen);
-                }
-            });
-
-            tasks = arrangeTasks(tasks);
-            renderPages(tasks);
-        }
-
-        // Dynamische Layout-Anpassung basierend auf der Gesamtanzahl der Aufgaben
-        function getGridLayout(totalTasks) {
-            if (totalTasks <= 45) return { cols: 3, fontSize: "14pt", rowGap: "11px" };
-            if (totalTasks <= 64) return { cols: 4, fontSize: "14pt", rowGap: "11px" };
-            if (totalTasks <= 80) return { cols: 5, fontSize: "12pt", rowGap: "8px" };
-            return { cols: 5, fontSize: "10.5pt", rowGap: "5px" }; // Bis 100 Aufgaben (20 Zeilen)
-        }
-
-        function renderPages(tasks) {
-            const container = document.getElementById('pages-container');
-            container.innerHTML = '';
-            container.appendChild(createPage(tasks, false));
-            container.appendChild(createPage(tasks, true));
-        }
-
-        function createPage(tasks, showAnswers) {
-            const page = document.createElement('div');
-            page.className = 'page';
-            
-            const layout = getGridLayout(tasks.length);
-            const cols = layout.cols;
-            const rows = Math.ceil(tasks.length / cols);
-
-            const title = document.createElement('div');
-            title.className = 'header-title';
-            title.innerText = showAnswers ? 'Kopfrechnen - LÖSUNGSBLATT' : 'Kopfrechnen (10 Minuten)';
-            page.appendChild(title);
-
-            const header = document.createElement('div');
-            header.className = 'header';
-            header.innerHTML = `<span>Name: _____________________________</span><span>Klasse: _______</span><span>Datum: ____________</span>`;
-            page.appendChild(header);
-
-            const grid = document.createElement('div');
-            grid.className = 'grid';
-            grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-            grid.style.fontSize = layout.fontSize;
-            grid.style.rowGap = layout.rowGap;
-
-            // Rendern in Spalten (von oben nach unten, dann nächste Spalte)
-            for (let row = 0; row < rows; row++) {
-                for (let col = 0; col < cols; col++) {
-                    let index = col * rows + row;
-                    if (index < tasks.length) {
-                        let taskObj = tasks[index];
-                        let taskDiv = document.createElement('div');
-                        taskDiv.className = 'task';
-                        
-                        let mathSpan = document.createElement('span');
-                        let latexStr = showAnswers ? `${taskObj.q} ${taskObj.a}` : taskObj.q;
-                        
-                        katex.render(latexStr, mathSpan, { displayMode: false });
-                        taskDiv.appendChild(mathSpan);
-                        
-                        if (!showAnswers) {
-                            let dotsDiv = document.createElement('div');
-                            dotsDiv.className = 'dots';
-                            taskDiv.appendChild(dotsDiv);
-                        }
-                        
-                        grid.appendChild(taskDiv);
-                    }
-                }
-            }
-            page.appendChild(grid);
-
-            if (!showAnswers) {
-                const footer = document.createElement('div');
-                footer.className = 'footer';
-                
-                const errorsGrid = document.createElement('div');
-                errorsGrid.className = 'errors-grid';
-                errorsGrid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
-                
-                for (let i = 0; i < cols; i++) {
-                    let errCol = document.createElement('div');
-                    errCol.innerText = 'Fehler: _______';
-                    errorsGrid.appendChild(errCol);
-                }
-                footer.appendChild(errorsGrid);
-
-                const totalScore = document.createElement('div');
-                totalScore.className = 'total-score';
-                totalScore.innerText = `Richtig: _______ / ${tasks.length}`;
-                footer.appendChild(totalScore);
-
-                page.appendChild(footer);
-            }
-
-            return page;
-        }
-
-        window.addEventListener('load', () => {
-            initSliders();
-            setTimeout(generateTasks, 100); 
-        });
-    </script>
-</body>
-</html>
+                    { id: "c5_1x1_m", label: "Kleines 1x1 (Mult.)", default: 18, gen: () => { let a = r(3, 9), b = r(3, 9); return { q: `${a} \\cdot ${b} =`, a: a * b, canon: pairKey('m', a, b) }; } },
+                    { id: "c5_1x1_d", label: "Kleines 1x1 (Div.)", default: 10, gen: () => { let a = r(3, 9), b = r(3, 9); return { q: `${a * b} : ${a} =`, a: b, canon: pairKey('d', a, b) }; } },
+                    { id: "c5_z1x1_m", label: "Zehner-1x1 (Mult.)", default: 5, gen: () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a} \\cdot ${b} =`, a: a * b, canon: pairKey('zm', a, b) } : { q: `${b} \\cdot ${a} =`, a: a * b, canon: pairKey('zm', a, b) }; } },
+                    { id: "c5_z1x1_d", label: "Zehner-1x1 (Div.)", default: 4, gen: () => { let a = r(3, 9), b = r(2, 9) * 10; return Math.random() < 0.5 ? { q: `${a * b} : ${a} =`, a: b, canon: pairKey('zd', a, b) } : { q: `${a * b} : ${b} =`, a: a, canon: pairKey('zd', a, b) }; } },
+                    { id:
